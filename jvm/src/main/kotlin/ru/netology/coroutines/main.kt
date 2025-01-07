@@ -3,6 +3,9 @@ import okhttp3.*
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import okhttp3.logging.HttpLoggingInterceptor
+import ru.netology.coroutines.dto.Author
+import ru.netology.coroutines.dto.Comment
+import ru.netology.coroutines.dto.Post
 import java.io.IOException
 import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
@@ -18,9 +21,25 @@ private val client = OkHttpClient.Builder()
     .connectTimeout(30, TimeUnit.SECONDS)
     .build()
 
-data class Post(val id: Long, val authorId: Long, val content: String)
-data class Comment(val id: Long, val postId: Long, val authorId: Long, val content: String)
-data class Author(val id: Long, val name: String)
+
+fun main() {
+    runBlocking {
+        try {
+            val postsWithAuthors = getPostsWithAuthors(client)
+            postsWithAuthors.forEach { postWithComments ->
+                println("Post: ${postWithComments.post.content}, Author: ${postWithComments.author.name}")
+                postWithComments.comments.forEach { comment ->
+                    val commentAuthor = getAuthor(client, comment.authorId)
+                    println("Comment: ${comment.content}, Author: ${commentAuthor.name}")
+                }
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+        }
+    }
+}
+
+
 
 data class PostWithComments(
     val post: Post,
@@ -81,19 +100,3 @@ suspend fun getPostsWithAuthors(client: OkHttpClient): List<PostWithComments> {
     }
 }
 
-fun main() {
-    runBlocking {
-        try {
-            val postsWithAuthors = getPostsWithAuthors(client)
-            postsWithAuthors.forEach { postWithComments ->
-                println("Post: ${postWithComments.post.content}, Author: ${postWithComments.author.name}")
-                postWithComments.comments.forEach { comment ->
-                    val commentAuthor = getAuthor(client, comment.authorId)
-                    println("Comment: ${comment.content}, Author: ${commentAuthor.name}")
-                }
-            }
-        } catch (e: Exception) {
-            e.printStackTrace()
-        }
-    }
-}
