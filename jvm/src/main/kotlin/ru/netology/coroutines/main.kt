@@ -24,22 +24,18 @@ private val client = OkHttpClient.Builder().addInterceptor(HttpLoggingIntercepto
     level = HttpLoggingInterceptor.Level.BODY
 }).connectTimeout(30, TimeUnit.SECONDS).build()
 
-fun main() {
-    with(CoroutineScope(EmptyCoroutineContext)) {
-        launch {
-            try {
-                val posts = getPosts(client).map { post ->
-                    async {
-                        PostWithComments(post, getComments(client, post.id))
-                    }
-                }.awaitAll()
-                println(posts)
-            } catch (e: Exception) {
-                e.printStackTrace()
+fun main() = runBlocking {
+    try {
+        val postsWithAuthors = getPostsWithAuthors()
+        postsWithAuthors.forEach { postWithAuthor ->
+            println("Post: ${postWithAuthor.post.content}, Author: ${postWithAuthor.author.name}, Published: ${postWithAuthor.post.published}, Likes: ${postWithAuthor.post.likes}")
+            postWithAuthor.comments.forEach { commentWithAuthor ->
+                println("  Comment: ${commentWithAuthor.comment.content}, Author: ${commentWithAuthor.author.name}, Published: ${commentWithAuthor.comment.published}, Likes: ${commentWithAuthor.comment.likes}")
             }
         }
+    } catch (e: Exception) {
+        e.printStackTrace()
     }
-    Thread.sleep(30_000L)
 }
 
 suspend fun OkHttpClient.apiCall(url: String): Response {
@@ -85,6 +81,20 @@ suspend fun getPostsWithAuthors(client: OkHttpClient): List<PostWithComments> {
                 val comments = getComments(client, post.id)
                 val author = getAuthor(client, post.authorId)
                 PostWithComments(post, comments)
+            }
+        }.awaitAll()
+    }
+}
+
+suspend fun getPostsWithAuthors(): List<PostWithAuthor> {
+    val posts = getPosts()
+    return coroutineScope {
+        posts.map { post ->
+            async {
+                val author = getAuthor(post.authorId)
+                val comments = getComments(post.id)
+                val commentsWithAuthors = getAuthorsForComments(comments)
+                PostWithAuthor(post, author, commentsWithAuthors)
             }
         }.awaitAll()
     }
