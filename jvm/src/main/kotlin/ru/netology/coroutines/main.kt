@@ -11,6 +11,7 @@ import java.util.concurrent.TimeUnit
 import kotlin.coroutines.resume
 import kotlin.coroutines.resumeWithException
 import kotlin.coroutines.suspendCoroutine
+import ru.netology.coroutines.dto.PostWithComments
 
 private val gson = Gson()
 private val BASE_URL = "http://127.0.0.1:9999"
@@ -38,7 +39,6 @@ fun main() {
         }
     }
 }
-
 
 
 suspend fun OkHttpClient.apiCall(url: String): Response {
