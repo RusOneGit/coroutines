@@ -41,12 +41,6 @@ fun main() {
 
 
 
-data class PostWithComments(
-    val post: Post,
-    val comments: List<Comment>,
-    val author: Author
-)
-
 suspend fun OkHttpClient.apiCall(url: String): Response {
     return suspendCoroutine { continuation ->
         Request.Builder()
